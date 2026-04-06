@@ -2,115 +2,165 @@
 
 ## Overview
 
-`contrast-workbench-spark-0606` is a browser-based accessibility workbench for quickly evaluating text/background color contrast and previewing accessible combinations in realistic UI samples. It is for designers, frontend engineers, and content authors who need fast WCAG-based answers without leaving the browser or setting up a design tool plugin.
+`contrast-workbench-spark-0606` is a browser-based accessibility workbench for evaluating flat text/background color contrast and previewing accessible combinations in realistic UI samples. It is intended for designers, frontend engineers, and content authors who need a fast, trustworthy WCAG-based answer without leaving the browser.
+
+## Problem Statement
+
+Existing contrast tools often stop at a raw ratio, underspecify invalid states, or make it hard to judge a color pair in context. This project should close that gap with a polished, browser-first workbench that couples correct math with clear status communication and realistic live previews.
 
 ## Goals
 
-1. Let users enter or pick two colors and get an accurate WCAG contrast ratio immediately.
-2. Translate the ratio into clear AA and AAA pass-fail outcomes for normal and large text.
-3. Help users judge the pair in context through responsive, polished preview cards and curated starting palettes.
+1. Let users enter or pick a foreground/background pair and get an accurate WCAG contrast ratio immediately.
+2. Translate that ratio into explicit AA and AAA pass/fail outcomes for normal and large text.
+3. Make the result actionable through labeled preview cards, curated presets, and recoverable invalid-input guidance.
+4. Keep the implementation lightweight, static, and locally testable.
 
 ## Non-Goals
 
-- Full-page auditing of arbitrary websites or DOM inspection of live pages.
-- Support for alpha, gradients, blend modes, images, or non-hex freeform color syntax in v1.
-- User accounts, cloud persistence, collaboration, exports, or design-tool plugins.
+- Auditing arbitrary live pages, scraping DOM content, or crawling sites.
+- Supporting alpha channels, gradients, image backgrounds, overlays, or non-hex freeform CSS color syntax in v1.
+- User accounts, cloud persistence, exports, collaboration, or design-tool plugins.
 
 ## Personas
 
 ### Persona A: Frontend Engineer
 
-Needs a deterministic answer for a candidate text/background pair and wants confidence that the displayed result matches WCAG math and edge cases.
+Needs deterministic output that matches WCAG math exactly, including threshold edge cases, so the chosen pair can be implemented with confidence.
 
 ### Persona B: Product Designer
 
-Needs to try several branded combinations quickly, compare them in common UI patterns, and start from curated presets instead of a blank canvas.
+Needs to explore combinations quickly, compare foreground/background directionality, and start from curated palettes rather than an empty form.
 
 ### Persona C: Content Author
 
-Needs simple guidance when a chosen color pair is unreadable or invalid and does not want to understand the full formula to act correctly.
+Needs plain-language guidance when a color pair is invalid or fails contrast, without needing to understand the full formula.
 
-## User Stories
+## Functional Requirements
 
-### Color Entry And Validation
+### REQ-001: Dual Color Entry
 
-- **REQ-001** As a frontend engineer, I want to enter foreground and background colors as hex values or with simple color pickers so that I can test exact color pairs quickly.
-  - Acceptance criteria:
-    - [ ] The workbench exposes a foreground control and a background control, each with a hex text field and a synchronized native color picker.
-    - [ ] The product accepts `#RGB` and `#RRGGBB` input, normalizes shorthand to six-digit hex for internal use, and preserves a leading `#` in the visible field.
-    - [ ] Changing either the text field or picker updates the paired control and recalculates results without a manual submit action.
+As a user, I want both foreground and background controls to support hex entry and native color picking so that I can test exact pairs quickly.
 
-- **REQ-002** As a content author, I want clear guidance when a color value is invalid so that I can recover without guessing what broke.
-  - Acceptance criteria:
-    - [ ] Invalid values show inline helper text that explains the accepted format and identifies alpha or unsupported syntax as out of scope.
-    - [ ] The UI does not crash, blank the screen, or show a fake pass-fail result when either input is invalid.
-    - [ ] The last valid assessment remains visible until both inputs are valid again or is clearly replaced by a neutral "needs valid colors" state.
+Acceptance criteria:
 
-### Contrast Assessment
+- [ ] The workbench exposes one foreground control and one background control.
+- [ ] Each control includes a visible hex text input and a synchronized native color picker.
+- [ ] The product accepts `#RGB` and `#RRGGBB`, preserves a leading `#`, and normalizes valid input to six-digit uppercase hex for calculation and picker sync.
+- [ ] Changing either the text field or picker updates the paired control and recalculates results without a submit action.
 
-- **REQ-003** As a frontend engineer, I want the tool to calculate the WCAG contrast ratio accurately so that I can rely on it for implementation decisions.
-  - Acceptance criteria:
-    - [ ] The app computes contrast using the WCAG sRGB relative luminance formula and displays the ratio in `X.XX:1` format.
-    - [ ] Pass-fail logic uses the full computed ratio and does not round before threshold comparison.
-    - [ ] The ratio updates within the same interaction cycle as input changes and is visible without scrolling on desktop.
+### REQ-002: Invalid Color Guidance
 
-- **REQ-004** As a designer, I want AA and AAA outcomes for normal and large text so that I can understand where a pair is acceptable.
-  - Acceptance criteria:
-    - [ ] The results panel shows four labeled outcomes: AA normal text, AA large text, AAA normal text, and AAA large text.
-    - [ ] Each outcome uses text labels or icons in addition to color to indicate pass or fail.
-    - [ ] Large-text messaging explains that the relaxed threshold applies only to large-scale text, not all text in the previews.
+As a user, I want invalid or unsupported color input to be recoverable so that I can fix it without guessing or losing context.
 
-### Preview And Exploration
+Acceptance criteria:
 
-- **REQ-005** As a designer, I want live preview cards for heading text, body text, buttons, and muted text so that I can judge the chosen pair in realistic contexts.
-  - Acceptance criteria:
-    - [ ] The workbench shows at least four preview variants: heading, body copy, primary button, and muted/supporting text.
-    - [ ] Preview content updates immediately when the active colors change.
-    - [ ] Preview labels make the sample role explicit so users do not confuse sample cards with a compliance guarantee for every UI use.
+- [ ] Invalid values show inline helper text near the affected field.
+- [ ] Guidance explicitly states that only opaque hex is supported in v1 and that transparency syntax is out of scope.
+- [ ] The UI does not crash, blank the page, or display a fresh pass/fail result for invalid inputs.
+- [ ] While one or both inputs are invalid, the assessment area shows a neutral `Unavailable` state instead of an authoritative ratio or pass/fail result.
 
-- **REQ-006** As a designer, I want a one-click swap action so that I can compare inverse foreground/background usage quickly.
-  - Acceptance criteria:
-    - [ ] A swap control exchanges the current foreground and background values in one interaction.
-    - [ ] Swap preserves validity state and triggers immediate recalculation and preview refresh.
-    - [ ] The action is available by keyboard and has an accessible name.
+### REQ-003: WCAG Contrast Calculation
 
-- **REQ-007** As a designer, I want curated starter palettes or presets so that I can begin from useful combinations instead of an empty state.
-  - Acceptance criteria:
-    - [ ] The app ships with a finite curated preset list that includes both passing and intentionally failing examples for comparison.
-    - [ ] Selecting a preset applies both colors and updates the ratio, status grid, and previews.
-    - [ ] The active preset is visually indicated until the user edits either color manually.
+As a frontend engineer, I want the displayed contrast ratio to match WCAG math so that I can trust the tool for implementation decisions.
 
-### Layout And Device Support
+Acceptance criteria:
 
-- **REQ-008** As a mobile user, I want the workbench to remain usable on a phone so that I can check colors away from my desk.
-  - Acceptance criteria:
-    - [ ] At widths from `375px` and up, controls, results, presets, and preview cards stack in a readable order without horizontal scrolling.
-    - [ ] On desktop, the input/result area and preview area are both accessible without excessive scrolling on a common laptop viewport.
-    - [ ] Focus order follows the visual order in both desktop and mobile layouts.
+- [ ] The app computes contrast using the WCAG sRGB relative luminance formula.
+- [ ] The ratio is displayed in `X.XX:1` format.
+- [ ] Threshold comparisons use the raw computed ratio and do not round before evaluating success.
+- [ ] The ratio updates in the same interaction cycle as a valid input change.
+
+### REQ-004: AA And AAA Outcome Matrix
+
+As a designer, I want explicit pass/fail outcomes for normal and large text so that I can tell where a pair is acceptable.
+
+Acceptance criteria:
+
+- [ ] The results panel shows four labeled outcomes: AA normal text, AA large text, AAA normal text, and AAA large text.
+- [ ] Each outcome communicates `Pass`, `Fail`, or `Unavailable` using text and an icon or shape cue, not color alone.
+- [ ] Large-text guidance is shown near the matrix or in adjacent helper copy.
+
+### REQ-005: Live Preview Cards
+
+As a designer, I want realistic preview cards so that I can judge the chosen pair in common UI contexts.
+
+Acceptance criteria:
+
+- [ ] The workbench includes at least four labeled preview variants: heading, body copy, primary button, and muted/supporting text.
+- [ ] Preview cards update immediately after valid color changes.
+- [ ] Preview labels make the sample role explicit so the UI does not imply universal compliance.
+
+### REQ-006: Swap Action
+
+As a designer, I want a one-step swap action so that I can compare reversed foreground/background usage quickly.
+
+Acceptance criteria:
+
+- [ ] A swap control exchanges the current foreground and background values in one interaction.
+- [ ] The swap control is keyboard reachable and has an accessible name.
+- [ ] Swap triggers immediate recalculation and preview refresh.
+- [ ] If either field is invalid, the product does not fabricate a valid result during swap handling.
+
+### REQ-007: Curated Presets
+
+As a designer, I want curated starter combinations so that I can begin from useful examples instead of an empty state.
+
+Acceptance criteria:
+
+- [ ] The app ships with a finite local preset catalog that includes both passing and intentionally failing examples.
+- [ ] Selecting a preset applies both colors and updates the ratio, status matrix, and previews immediately.
+- [ ] The active preset is visually indicated.
+- [ ] Any manual edit to either color clears active-preset styling.
+
+### REQ-008: Responsive Single-Screen Workbench
+
+As a mobile or desktop user, I want the workbench to stay usable across viewport sizes so that I can assess colors without layout friction.
+
+Acceptance criteria:
+
+- [ ] At widths from `375px` and up, the workbench is usable without horizontal scrolling in the primary flow.
+- [ ] On desktop widths from `1024px` and up, controls/results and previews are visible in the same overall viewport on a common laptop-sized screen.
+- [ ] On mobile, sections appear in a stacked order that preserves the workflow: inputs, swap, result summary, presets, previews.
+- [ ] Focus order follows visual order on both desktop and mobile layouts.
 
 ## Non-Functional Requirements
 
-| ID | Requirement | Target | How to Verify |
+| ID | Requirement | Target | How To Verify |
 |----|-------------|--------|---------------|
-| NFR-001 | Calculation correctness | Ratio matches WCAG 2.2 sRGB formula; pass-fail thresholds applied without rounding | Unit tests against known color pairs and threshold edge cases |
-| NFR-002 | App accessibility | Workbench UI meets WCAG AA for labels, keyboard flow, visible focus, and non-color-only status cues | Manual keyboard QA plus automated accessibility scan |
-| NFR-003 | Responsive support | Usable from `375px` mobile through `1440px` desktop with no horizontal overflow in primary flow | Visual QA at representative viewports |
-| NFR-004 | Runtime performance | Initial render and first interaction feel immediate on a local static build; no network dependency for core functionality | Lighthouse run plus manual throttled interaction check |
-| NFR-005 | Robustness | Invalid input, repeated swaps, and rapid typing do not throw uncaught errors or produce stale UI state | Automated interaction tests and browser console capture |
-| NFR-006 | Local automated testability | Project includes local automated tests for parser/calculation logic and at least one end-to-end happy-path interaction flow | `vitest` and browser or E2E test run in local CI command |
+| NFR-001 | Calculation correctness | Ratio and thresholds match WCAG 2.2 sRGB math, including edge cases near `3`, `4.5`, and `7` | Unit tests with fixed fixtures and threshold-edge assertions |
+| NFR-002 | UI accessibility | Keyboard-operable controls, visible focus, semantic labels, accessible helper text, and non-color-only status signals | Manual keyboard QA plus automated accessibility scan |
+| NFR-003 | Responsive support | Primary flow remains usable from `375px` mobile through `1440px` desktop with no horizontal overflow | Visual QA at representative breakpoints |
+| NFR-004 | Runtime performance | Initial load and first valid recalculation feel immediate on a local static build | Lighthouse plus manual throttled interaction check |
+| NFR-005 | Robustness | Rapid typing, repeated swaps, invalid entry, and preset changes do not throw uncaught errors or leave contradictory UI state | Browser interaction tests and console inspection |
+| NFR-006 | Browser-first operation | Core calculation, preset application, and preview updates require no network requests after the initial asset load | Browser network inspection during interaction |
+| NFR-007 | Local automated testability | Repo includes local automated tests for parser, engine, and at least one end-to-end user flow | Local `vitest` and Playwright run |
+| NFR-008 | Lightweight deployment shape | Production build is deployable as static assets with no backend runtime or persistence dependency | Build output inspection and deployment configuration review |
+
+## Requirement Summary
+
+- Functional requirements: `8`
+- Non-functional requirements: `8`
+- Total tracked requirements: `16`
 
 ## Data Model
 
 ```mermaid
 erDiagram
+    COLOR_INPUT {
+        string raw_value
+        string normalized_hex
+        boolean is_valid
+        string field_name
+    }
     COLOR_PAIR {
         string foreground_hex
         string background_hex
-        boolean is_valid
+        string assessment_state
         string source
     }
     CONTRAST_ASSESSMENT {
-        number ratio
+        number raw_ratio
+        string display_ratio
         boolean aa_normal
         boolean aa_large
         boolean aaa_normal
@@ -130,14 +180,41 @@ erDiagram
         string expectation
     }
 
+    COLOR_INPUT ||--o| COLOR_PAIR : "contributes to"
     COLOR_PAIR ||--|| CONTRAST_ASSESSMENT : "produces"
     COLOR_PAIR ||--o{ PREVIEW_VARIANT : "skins"
     PRESET ||--|| COLOR_PAIR : "applies"
 ```
 
+## State Model
+
+```mermaid
+stateDiagram-v2
+    [*] --> ValidDefault
+    ValidDefault --> ValidEdited: valid text or picker change
+    ValidDefault --> InvalidEditing: malformed or unsupported input
+    ValidEdited --> InvalidEditing: malformed or unsupported input
+    InvalidEditing --> ValidEdited: both fields become valid
+    ValidEdited --> Swapped: swap
+    Swapped --> ValidEdited: any further valid change
+    ValidEdited --> PresetApplied: preset selection
+    PresetApplied --> ValidEdited: manual edit clears active preset
+    InvalidEditing --> PresetApplied: preset selection with valid pair
+```
+
 ## API Contracts
 
-No network API is required for v1. All calculations, validation, preset selection, and previews happen in the client.
+No network API is required for v1. Parsing, validation, ratio calculation, status evaluation, preset application, and preview rendering all happen locally in the client.
+
+## Release Gates
+
+| Gate | Requirement IDs | Evidence Needed |
+|------|-----------------|-----------------|
+| Math trust gate | REQ-003, REQ-004, NFR-001 | Passing unit tests for ratio fixtures and threshold edges |
+| Interaction trust gate | REQ-001, REQ-002, REQ-006, REQ-007, NFR-005 | Passing browser tests for typing, validation, swap, and preset flows |
+| Responsive usability gate | REQ-005, REQ-008, NFR-003 | Desktop and mobile QA evidence with no horizontal overflow |
+| Accessibility gate | REQ-002, REQ-004, REQ-008, NFR-002 | Keyboard walkthrough plus automated accessibility scan |
+| Deployment gate | NFR-004, NFR-006, NFR-007, NFR-008 | Local build, test run, and static-host readiness verification |
 
 ## Implementation Decomposition
 
@@ -145,8 +222,8 @@ This section defines post-approval work slices only. It is not an issue list.
 
 | Slice | Scope | Requirement IDs |
 |------|-------|-----------------|
-| Workstream A | App shell, responsive layout, semantic structure, and keyboard-safe control layout | REQ-001, REQ-008, NFR-002, NFR-003 |
-| Workstream B | Hex parsing, normalization, invalid-state messaging, and swap interaction | REQ-001, REQ-002, REQ-006, NFR-001, NFR-005 |
-| Workstream C | WCAG contrast engine and results matrix | REQ-003, REQ-004, NFR-001 |
-| Workstream D | Preview cards and curated preset catalog behavior | REQ-005, REQ-007, NFR-002, NFR-003 |
-| Workstream E | Local automated tests and release-ready QA criteria | REQ-001, REQ-002, REQ-003, REQ-004, REQ-006, REQ-008, NFR-004, NFR-005, NFR-006 |
+| Workstream A | App shell, semantic landmarks, responsive layout, and section hierarchy | REQ-008, NFR-002, NFR-003, NFR-008 |
+| Workstream B | Hex parsing, normalization, invalid-state messaging, and picker synchronization | REQ-001, REQ-002, NFR-001, NFR-005 |
+| Workstream C | Pure WCAG contrast engine and AA/AAA result matrix | REQ-003, REQ-004, NFR-001, NFR-007 |
+| Workstream D | Swap interaction, preset catalog behavior, and live preview cards | REQ-005, REQ-006, REQ-007, NFR-005, NFR-006 |
+| Workstream E | Local automated tests, accessibility checks, and release verification | REQ-001, REQ-002, REQ-003, REQ-004, REQ-006, REQ-008, NFR-002, NFR-003, NFR-004, NFR-007 |

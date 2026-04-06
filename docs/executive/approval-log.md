@@ -3,3 +3,4 @@
 | Timestamp (UTC) | Project | Decision Type | Source | Effective State Transition | Artifact | Notes |
 |-----------------|---------|---------------|--------|----------------------------|----------|-------|
 | 2026-04-06T06:57:48Z | contrast-workbench-spark-0606 | Executive Brief Published | Chat | `planning -> awaiting-review` | [Executive Brief](./project-brief.md) | Brief published. Issue creation intentionally deferred pending explicit approval or auto-start instruction. |
+| 2026-04-06T07:07:01Z | contrast-workbench-spark-0606 | Planning Approved For Build | Chat | `awaiting-review -> approved` | [Executive Brief](./project-brief.md) | Planning artifacts completed, project marked approved, and build authorization granted. |
